@@ -6,9 +6,9 @@ from datetime import datetime
 
 # Constants
 PARTIES = ['Party A', 'Party B']
-POSITIONS = ['president', 'vice president', 'secretary', 'joint secretary', 'treasurer', 'event organiser', 'sports']  # Removed 'media'
+POSITIONS = ['president', 'vice president', 'secretary', 'joint secretary', 'treasurer', 'event organiser', 'sports']
 CANDIDATES = {pos: {party: f"{party} Candidate for {pos}" for party in PARTIES} for pos in POSITIONS}
-PASSWORD = "AllInOne"  # Set a password for accessing results and deleting votes
+PASSWORD = "AllInOne"
 RESULTS_FILE = "election_results.csv"
 
 # Predefined results as requested
@@ -22,7 +22,7 @@ PREDEFINED_RESULTS = {
     'sports': {'Party A': 51, 'Party B': 49}
 }
 
-# Session state for votes and voted USNs
+# Initialize session state with proper checks
 if 'votes' not in st.session_state:
     st.session_state.votes = []
 if 'voted_usns' not in st.session_state:
@@ -31,64 +31,69 @@ if 'vote_submitted' not in st.session_state:
     st.session_state.vote_submitted = False
 if 'current_page' not in st.session_state:
     st.session_state.current_page = "Voting"
+if 'usn_input_key' not in st.session_state:
+    st.session_state.usn_input_key = 0
 
 def reset_voting_form():
     """Reset the voting form and clear USN input"""
     st.session_state.vote_submitted = False
-    # Clear the USN input by using a unique key that we can manipulate
-    if 'usn_input_key' not in st.session_state:
-        st.session_state.usn_input_key = 0
     st.session_state.usn_input_key += 1
 
 def save_results_to_csv(total_votes):
     """Save election results to CSV file"""
-    results_data = []
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    for pos in POSITIONS:
-        party_a_percent = PREDEFINED_RESULTS[pos]['Party A']
-        party_b_percent = PREDEFINED_RESULTS[pos]['Party B']
-        winner = 'Party A' if party_a_percent > party_b_percent else 'Party B'
+    try:
+        results_data = []
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        # Calculate theoretical vote counts based on total votes
-        if total_votes > 0:
-            party_a_votes = int(round(total_votes * party_a_percent / 100))
-            party_b_votes = total_votes - party_a_votes
+        for pos in POSITIONS:
+            party_a_percent = PREDEFINED_RESULTS[pos]['Party A']
+            party_b_percent = PREDEFINED_RESULTS[pos]['Party B']
+            winner = 'Party A' if party_a_percent > party_b_percent else 'Party B'
+            
+            # Calculate theoretical vote counts based on total votes
+            if total_votes > 0:
+                party_a_votes = int(round(total_votes * party_a_percent / 100))
+                party_b_votes = total_votes - party_a_votes
+            else:
+                party_a_votes = 0
+                party_b_votes = 0
+            
+            results_data.append({
+                'timestamp': timestamp,
+                'position': pos.capitalize(),
+                'total_votes': total_votes,
+                'party_a_votes': party_a_votes,
+                'party_b_votes': party_b_votes,
+                'winner': winner
+            })
+        
+        # Create DataFrame and save to CSV
+        df = pd.DataFrame(results_data)
+        
+        # Check if file exists to determine whether to write header
+        file_exists = os.path.isfile(RESULTS_FILE)
+        
+        # Save to CSV (append if file exists, otherwise create new)
+        if file_exists:
+            df.to_csv(RESULTS_FILE, mode='a', header=False, index=False)
         else:
-            party_a_votes = 0
-            party_b_votes = 0
+            df.to_csv(RESULTS_FILE, mode='w', header=True, index=False)
         
-        results_data.append({
-            'timestamp': timestamp,
-            'position': pos.capitalize(),
-            'total_votes': total_votes,
-            'party_a_votes': party_a_votes,
-            'party_b_votes': party_b_votes,
-            'party_a_percentage': party_a_percent,
-            'party_b_percentage': party_b_percent,
-            'winner': winner
-        })
-    
-    # Create DataFrame and save to CSV
-    df = pd.DataFrame(results_data)
-    
-    # Check if file exists to determine whether to write header
-    file_exists = os.path.isfile(RESULTS_FILE)
-    
-    # Save to CSV (append if file exists, otherwise create new)
-    if file_exists:
-        df.to_csv(RESULTS_FILE, mode='a', header=False, index=False)
-    else:
-        df.to_csv(RESULTS_FILE, mode='w', header=True, index=False)
-    
-    return df
+        return df
+    except Exception as e:
+        st.error(f"Error saving results to CSV: {e}")
+        return None
 
 def load_results_from_csv():
     """Load and display results from CSV file"""
-    if os.path.isfile(RESULTS_FILE):
-        df = pd.read_csv(RESULTS_FILE)
-        return df
-    else:
+    try:
+        if os.path.isfile(RESULTS_FILE):
+            df = pd.read_csv(RESULTS_FILE)
+            return df
+        else:
+            return None
+    except Exception as e:
+        st.error(f"Error loading CSV: {e}")
         return None
 
 def display_voting_page():
@@ -96,8 +101,7 @@ def display_voting_page():
     st.header("Cast Your Vote")
     
     # USN Input and Validation with dynamic key to allow reset
-    usn_key = st.session_state.get('usn_input_key', 0)
-    usn = st.text_input("Enter your USN (e.g., 4JN24MC001):", key=f"usn_{usn_key}")
+    usn = st.text_input("Enter your USN (e.g., 4JN24MC001):", key=f"usn_{st.session_state.usn_input_key}")
 
     if st.session_state.vote_submitted:
         st.success("✅ Your vote has been submitted successfully!")
@@ -124,7 +128,7 @@ def display_voting_page():
                         for pos in POSITIONS:
                             st.write(f"**{pos.capitalize()}:**")
                             options = [CANDIDATES[pos][party] for party in PARTIES]
-                            selections[pos] = st.radio(f"Select candidate for {pos}:", options, key=pos)
+                            selections[pos] = st.radio(f"Select candidate for {pos}:", options, key=f"vote_{pos}")
                         
                         submitted = st.form_submit_button("Submit Vote")
                         if submitted:
@@ -179,14 +183,12 @@ def display_results_page():
             with col1:
                 st.metric(
                     label="Party A Votes",
-                    value=party_a_votes,
-                    delta=None
+                    value=party_a_votes
                 )
             with col2:
                 st.metric(
                     label="Party B Votes",
-                    value=party_b_votes,
-                    delta=None
+                    value=party_b_votes
                 )
             
             st.write(f"**Winner: {winner}**")
@@ -195,7 +197,8 @@ def display_results_page():
         # Save results to CSV when viewing
         if total_votes > 0:
             results_df = save_results_to_csv(total_votes)
-            st.success(f"Results saved to {RESULTS_FILE}")
+            if results_df is not None:
+                st.success(f"Results saved to {RESULTS_FILE}")
         
         # Admin Actions Section
         st.subheader("Admin Actions")
@@ -229,30 +232,38 @@ def display_results_page():
                     st.rerun()
             with col2:
                 if st.button("Delete CSV File"):
-                    if os.path.isfile(RESULTS_FILE):
-                        os.remove(RESULTS_FILE)
-                        st.success("CSV file deleted.")
-                    else:
-                        st.error("CSV file not found.")
-        elif delete_password:  # Only show error if something was entered
+                    try:
+                        if os.path.isfile(RESULTS_FILE):
+                            os.remove(RESULTS_FILE)
+                            st.success("CSV file deleted.")
+                        else:
+                            st.error("CSV file not found.")
+                    except Exception as e:
+                        st.error(f"Error deleting CSV: {e}")
+        elif delete_password:
             st.error("Incorrect password for deletion.")
     else:
-        if result_password:  # Only show error if password was entered
+        if result_password:
             st.error("Incorrect password. Access denied.")
 
 # Main App
 st.title("College Voting System")
 
-# Navigation
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("🏠 Voting Page"):
-        st.session_state.current_page = "Voting"
-        st.rerun()
-with col2:
-    if st.button("📊 Results Page"):
-        st.session_state.current_page = "Results"
-        st.rerun()
+# Navigation - Fixed to work better with Streamlit Cloud
+page = st.radio(
+    "Navigate to:",
+    ["Voting Page", "Results Page"],
+    index=0 if st.session_state.current_page == "Voting" else 1,
+    horizontal=True
+)
+
+# Update current page based on selection
+if page == "Voting Page" and st.session_state.current_page != "Voting":
+    st.session_state.current_page = "Voting"
+    st.rerun()
+elif page == "Results Page" and st.session_state.current_page != "Results":
+    st.session_state.current_page = "Results"
+    st.rerun()
 
 st.markdown("---")
 
