@@ -314,16 +314,6 @@ with st.sidebar:
     st.header("Election Info")
     st.write(f"**Total Votes Cast:** {len(st.session_state.v1)}")
     st.write(f"**Current Page:** {st.session_state.v4}")
-    st.info("""
-    **Notes:**
-    - Media position voting has been disabled
-    - NOTA option available for all positions
-    - Vice President has 3 candidates
-    - **Vice President & Event Organiser use ACTUAL votes**
-    - One vote per USN
-    - Only specific MCA students can vote
-    - **Total eligible voters: 120**
-    """)
     st.markdown("---")
     st.markdown("### Positions & Candidates:")
     for _cs in _b:
