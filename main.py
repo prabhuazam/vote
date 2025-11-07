@@ -1,5 +1,4 @@
 import streamlit as st
-import re
 import pandas as pd
 import os
 from datetime import datetime
@@ -42,136 +41,98 @@ if 'v5' not in st.session_state: st.session_state.v5 = 0
 
 def _l(): st.session_state.v3 = False; st.session_state.v5 += 1
 
-def _m(_n, _o, _p=None):
-    if _p and _n in ['vice president', 'event organiser']:
-        if _n == 'vice president':
-            _q = 0
-            _r = 0
-            _s = 0
-            for _t in _p:
-                if _n in _t:
-                    _u = _t[_n]
-                    if 'Geetha' in _u:
-                        _q += 1
-                    elif 'Keerthana N' in _u:
-                        _r += 1
-                    elif 'Varsha' in _u:
-                        _s += 1
-            _v = _q + _r + _s
-            if _v > 0:
-                return _q, _r, _s, max(
-                    {'Party A': _q, 'Party B': _r, 'Party C': _s},
-                    key={'Party A': _q, 'Party B': _r, 'Party C': _s}.get
-                )
+def _m(_n, _o):
+    _p = 0
+    _q = 0
+    _r = 0
+    for _s in st.session_state.v1:
+        if _n in _s:
+            _t = _s[_n]
+            if _n == 'vice president':
+                if 'Geetha' in _t: _p += 1
+                elif 'Keerthana N' in _t: _q += 1
+                elif 'Varsha' in _t: _r += 1
+            elif _n == 'event organiser':
+                if 'Vainika' in _t: _p += 1
+                elif 'Anushree' in _t: _q += 1
             else:
-                return 0, 0, 0, 'No Votes'
-        elif _n == 'event organiser':
-            _w = 0
-            _x = 0
-            for _y in _p:
-                if _n in _y:
-                    _z = _y[_n]
-                    if 'Vainika' in _z:
-                        _w += 1
-                    elif 'Anushree' in _z:
-                        _x += 1
-            _aa = _w + _x
-            if _aa > 0:
-                return _w, _x, 0, 'Party A' if _w > _x else 'Party B'
-            else:
-                return 0, 0, 0, 'No Votes'
-    _ab = 68
-    _ac = 32
-    _ad = 54
-    _ae = 46
-    _af = 63
-    _ag = 37
-    _ah = 71
-    _ai = 29
-    _aj = 51
-    _ak = 49
-    _al = {
-        'president': {'Party A': _ab, 'Party B': _ac},
-        'secretary': {'Party A': _ad, 'Party B': _ae},
-        'joint secretary': {'Party A': _af, 'Party B': _ag},
-        'treasurer': {'Party A': _ah, 'Party B': _ai},
-        'sports': {'Party A': _aj, 'Party B': _ak}
-    }
-    if _n in _al:
-        _am = int(round(_o * _al[_n]['Party A'] / 100))
-        _an = _o - _am
-        _ao = 'Party A' if _al[_n]['Party A'] > _al[_n]['Party B'] else 'Party B'
-        return _am, _an, 0, _ao
-    return 0, 0, 0, 'Party A'
-
-def _ap():
-    _aq = len(st.session_state.v1)
-    _ar = []
-    _as = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    for _at in _b:
-        if _aq > 0:
-            if _at in ['vice president', 'event organiser']:
-                if _at == 'vice president':
-                    _au, _av, _aw, _ax = _m(_at, _aq, st.session_state.v1)
-                else:
-                    _au, _av, _aw, _ax = _m(_at, _aq, st.session_state.v1)
-                _ar.append({'timestamp': _as, 'position': _at.capitalize(), 'total_votes': _aq, 'party_a_votes': _au, 'party_b_votes': _av, 'party_c_votes': _aw, 'winner': _ax})
-            else:
-                _au, _av, _aw, _ax = _m(_at, _aq)
-                _ar.append({'timestamp': _as, 'position': _at.capitalize(), 'total_votes': _aq, 'party_a_votes': _au, 'party_b_votes': _av, 'party_c_votes': 0, 'winner': _ax})
-        else:
-            _ar.append({'timestamp': _as, 'position': _at.capitalize(), 'total_votes': 0, 'party_a_votes': 0, 'party_b_votes': 0, 'party_c_votes': 0, 'winner': 'No Votes'})
-    _ay = pd.DataFrame(_ar)
-    if os.path.isfile(_h):
-        _ay.to_csv(_h, mode='a', header=False, index=False)
+                if 'Shrinivas' in _t: _p += 1
+                elif 'Pavan' in _t: _q += 1
+                elif 'Yashwanth' in _t: _p += 1
+                elif 'Gowtham' in _t: _q += 1
+                elif 'Varun' in _t: _p += 1
+                elif 'Deekshith' in _t: _q += 1
+                elif 'Rahul' in _t: _p += 1
+                elif 'Sukrutha' in _t: _q += 1
+                elif 'Akhilesh' in _t: _p += 1
+                elif 'Satya Prakash' in _t: _q += 1
+    if _n == 'vice president':
+        _u = {'Party A': _p, 'Party B': _q, 'Party C': _r}
+        _v = max(_u, key=_u.get) if max(_u.values()) > 0 else 'No Votes'
+        return _p, _q, _r, _v
     else:
-        _ay.to_csv(_h, mode='w', header=True, index=False)
-    return _ay
+        _u = {'Party A': _p, 'Party B': _q}
+        _v = max(_u, key=_u.get) if max(_u.values()) > 0 else 'No Votes'
+        return _p, _q, 0, _v
 
-def _az():
+def _w():
+    _x = len(st.session_state.v1)
+    _y = []
+    _z = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    for _aa in _b:
+        _ab, _ac, _ad, _ae = _m(_aa, _x)
+        _y.append({'timestamp': _z, 'position': _aa.capitalize(), 'total_votes': _x, 'party_a_votes': _ab, 'party_b_votes': _ac, 'party_c_votes': _ad, 'winner': _ae})
+    _af = pd.DataFrame(_y)
+    if os.path.isfile(_h):
+        _af.to_csv(_h, mode='a', header=False, index=False)
+    else:
+        _af.to_csv(_h, mode='w', header=True, index=False)
+    return _af
+
+def _ag():
     try:
         if os.path.isfile(_h):
-            _ba = pd.read_csv(_h, on_bad_lines='skip')
-            _bb = ['timestamp', 'position', 'total_votes', 'party_a_votes', 'party_b_votes', 'party_c_votes', 'winner']
-            if not all(_bc in _ba.columns for _bc in _bb):
+            _ah = pd.read_csv(_h, on_bad_lines='skip')
+            _ai = ['timestamp', 'position', 'total_votes', 'party_a_votes', 'party_b_votes', 'party_c_votes', 'winner']
+            if not all(_aj in _ah.columns for _aj in _ai):
                 return None
-            return _ba
+            return _ah
         return None
     except:
         return None
 
-def _bd():
+def _ak():
     try:
         if os.path.isfile(_h):
-            _be = pd.read_csv(_h, on_bad_lines='skip')
-            if _be.empty:
+            _al = pd.read_csv(_h, on_bad_lines='skip')
+            if _al.empty:
                 return None
-            if 'timestamp' not in _be.columns:
+            if 'timestamp' not in _al.columns:
                 return None
-            _bf = _be['timestamp'].max()
-            return _be[_be['timestamp'] == _bf]
+            _am = _al['timestamp'].max()
+            return _al[_al['timestamp'] == _am]
         return None
     except:
         return None
 
-def _bg():
+def _an():
     try:
         if os.path.isfile(_h):
-            _bh = f"election_results_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            os.rename(_h, _bh)
-            st.success(f"Backup: {bh}")
+            _ao = f"election_results_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            os.rename(_h, _ao)
+            st.success(f"Backup: {_ao}")
         if st.session_state.v1:
-            _bi = _ap()
+            _ap = _w()
             st.success("CSV recreated")
-            return _bi
+            return _ap
         else:
             st.info("No votes")
             return None
     except:
         return None
 
-def _bj(_bk, _bl):
-    _bm = {
+def _aq(_ar, _as):
+    _at = {
         'president': {'Party A': 'Shrinivas', 'Party B': 'Pavan'},
         'vice president': {'Party A': 'Geetha', 'Party B': 'Keerthana N', 'Party C': 'Varsha'},
         'secretary': {'Party A': 'Yashwanth', 'Party B': 'Gowtham'},
@@ -180,11 +141,11 @@ def _bj(_bk, _bl):
         'event organiser': {'Party A': 'Vainika', 'Party B': 'Anushree'},
         'sports': {'Party A': 'Akhilesh', 'Party B': 'Satya Prakash'}
     }
-    return _bm.get(_bk, {}).get(_bl, f"{_bl} Candidate")
+    return _at.get(_ar, {}).get(_as, f"{_as} Candidate")
 
-def _bn():
+def _au():
     st.header("Cast Your Vote")
-    _bo = st.text_input("Enter USN:", key=f"usn_{st.session_state.v5}")
+    _av = st.text_input("Enter USN:", key=f"usn_{st.session_state.v5}")
     if st.session_state.v3:
         st.success("✅ Submitted!")
         st.info("Cannot vote again")
@@ -192,95 +153,95 @@ def _bn():
             _l()
             st.rerun()
     else:
-        if _bo:
-            _bp = _bo.strip()
-            if _bp not in _valid_usns:
+        if _av:
+            _aw = _av.strip()
+            if _aw not in _valid_usns:
                 st.error("❌ Invalid USN. Only specific MCA students are allowed to vote.")
-            elif _bp in st.session_state.v2:
+            elif _aw in st.session_state.v2:
                 st.error("❌ Already voted")
             else:
                 st.success("USN validated. Proceed to vote.")
                 with st.form("vf"):
                     st.subheader("Vote:")
-                    _bq = {}
-                    for _br in _b:
-                        st.write(f"**{_br.capitalize()}:**")
-                        if _br == 'vice president':
-                            _bs = ["NOTA - None of the Above"] + [f"{_bj(_br, _bt)}" for _bt in _c]
+                    _ax = {}
+                    for _ay in _b:
+                        st.write(f"**{_ay.capitalize()}:**")
+                        if _ay == 'vice president':
+                            _az = ["NOTA - None of the Above"] + [f"{_aq(_ay, _ba)}" for _ba in _c]
                         else:
-                            _bs = ["NOTA - None of the Above"] + [f"{_bj(_br, _bt)}" for _bt in _a]
-                        _bq[_br] = st.radio(f"Select candidate for {_br}:", _bs, key=f"r_{_br}")
+                            _az = ["NOTA - None of the Above"] + [f"{_aq(_ay, _ba)}" for _ba in _a]
+                        _ax[_ay] = st.radio(f"Select candidate for {_ay}:", _az, key=f"r_{_ay}")
                     submitted = st.form_submit_button("Submit")
                     if submitted:
-                        st.session_state.v1.append(_bq)
-                        st.session_state.v2.add(_bp)
+                        st.session_state.v1.append(_ax)
+                        st.session_state.v2.add(_aw)
                         st.session_state.v3 = True
-                        _ap()
+                        _w()
                         st.rerun()
 
-def _bu():
+def _bb():
     st.header("Election Results")
-    _bv = st.text_input("Password:", type="password", key="rpw")
-    if _bv == _g:
+    _bc = st.text_input("Password:", type="password", key="rpw")
+    if _bc == _g:
         st.success("Access granted")
         if st.button("🛠️ Repair"):
-            _bg()
+            _an()
             st.rerun()
-        _bw = _bd()
-        if _bw is None or _bw.empty:
+        _bd = _ak()
+        if _bd is None or _bd.empty:
             st.warning("No results")
         else:
-            _bx = _bw['total_votes'].iloc[0]
-            st.write(f"**Total votes cast: {_bx}**")
+            _be = _bd['total_votes'].iloc[0]
+            st.write(f"**Total votes cast: {_be}**")
             st.write("---")
-            for _by in _b:
-                _bz = _bw[_bw['position'] == _by.capitalize()]
-                if not _bz.empty:
-                    st.subheader(f"Results for {_by.capitalize()}:")
-                    if _by == 'vice president':
-                        _ca = _bz['party_a_votes'].iloc[0]
-                        _cb = _bz['party_b_votes'].iloc[0]
-                        _cc = _bz['party_c_votes'].iloc[0]
-                        _cd = _bz['winner'].iloc[0]
-                        _ce, _cf, _cg = st.columns(3)
-                        with _ce:
-                            st.metric(f"{_bj(_by, 'Party A')}", _ca)
-                        with _cf:
-                            st.metric(f"{_bj(_by, 'Party B')}", _cb)
-                        with _cg:
-                            st.metric(f"{_bj(_by, 'Party C')}", _cc)
-                        st.write(f"**Winner: {_bj(_by, _cd)}**")
+            for _bf in _b:
+                _bg = _bd[_bd['position'] == _bf.capitalize()]
+                if not _bg.empty:
+                    st.subheader(f"Results for {_bf.capitalize()}:")
+                    if _bf == 'vice president':
+                        _bh = _bg['party_a_votes'].iloc[0]
+                        _bi = _bg['party_b_votes'].iloc[0]
+                        _bj = _bg['party_c_votes'].iloc[0]
+                        _bk = _bg['winner'].iloc[0]
+                        _bl, _bm, _bn = st.columns(3)
+                        with _bl:
+                            st.metric(f"{_aq(_bf, 'Party A')}", _bh)
+                        with _bm:
+                            st.metric(f"{_aq(_bf, 'Party B')}", _bi)
+                        with _bn:
+                            st.metric(f"{_aq(_bf, 'Party C')}", _bj)
+                        st.write(f"**Winner: {_aq(_bf, _bk)}**")
                     else:
-                        _ch = _bz['party_a_votes'].iloc[0]
-                        _ci = _bz['party_b_votes'].iloc[0]
-                        _cj = _bz['winner'].iloc[0]
-                        _ck, _cl = st.columns(2)
-                        with _ck:
-                            st.metric(f"{_bj(_by, 'Party A')}", _ch)
-                        with _cl:
-                            st.metric(f"{_bj(_by, 'Party B')}", _ci)
-                        st.write(f"**Winner: {_bj(_by, _cj)}**")
+                        _bo = _bg['party_a_votes'].iloc[0]
+                        _bp = _bg['party_b_votes'].iloc[0]
+                        _bq = _bg['winner'].iloc[0]
+                        _br, _bs = st.columns(2)
+                        with _br:
+                            st.metric(f"{_aq(_bf, 'Party A')}", _bo)
+                        with _bs:
+                            st.metric(f"{_aq(_bf, 'Party B')}", _bp)
+                        st.write(f"**Winner: {_aq(_bf, _bq)}**")
                     st.write("---")
         st.subheader("Admin Actions")
         st.write("### Results History")
-        _cm = _az()
-        if _cm is not None:
-            st.dataframe(_cm)
-            _cn = _cm.to_csv(index=False)
-            st.download_button("Download Results CSV", _cn, "election_results.csv", "text/csv")
+        _bt = _ag()
+        if _bt is not None:
+            st.dataframe(_bt)
+            _bu = _bt.to_csv(index=False)
+            st.download_button("Download Results CSV", _bu, "election_results.csv", "text/csv")
         else:
             st.write("No results data available")
-        _co = st.text_input("Enter password to delete all data:", type="password", key="dpw")
-        if _co == _g:
-            _cp, _cq = st.columns(2)
-            with _cp:
+        _bv = st.text_input("Enter password to delete all data:", type="password", key="dpw")
+        if _bv == _g:
+            _bw, _bx = st.columns(2)
+            with _bw:
                 if st.button("Delete All Votes"):
                     st.session_state.v1 = []
                     st.session_state.v2 = set()
                     st.session_state.v3 = False
                     st.success("Session votes cleared")
                     st.rerun()
-            with _cq:
+            with _bx:
                 if st.button("Delete Results CSV"):
                     try:
                         if os.path.isfile(_h):
@@ -291,38 +252,38 @@ def _bu():
                             st.error("No results CSV")
                     except:
                         pass
-        elif _co:
+        elif _bv:
             st.error("Wrong password")
     else:
-        if _bv:
+        if _bc:
             st.error("Access denied")
 
 st.title("MCA FORUM COLLEGE VOTING SYSTEM")
-_cr = st.radio("Go to:", ["Voting", "Results"], index=0 if st.session_state.v4 == "Voting" else 1, horizontal=True)
-if _cr == "Voting" and st.session_state.v4 != "Voting":
+_by = st.radio("Go to:", ["Voting", "Results"], index=0 if st.session_state.v4 == "Voting" else 1, horizontal=True)
+if _by == "Voting" and st.session_state.v4 != "Voting":
     st.session_state.v4 = "Voting"
     st.rerun()
-elif _cr == "Results" and st.session_state.v4 != "Results":
+elif _by == "Results" and st.session_state.v4 != "Results":
     st.session_state.v4 = "Results"
     st.rerun()
 st.markdown("---")
 if st.session_state.v4 == "Voting":
-    _bn()
+    _au()
 else:
-    _bu()
+    _bb()
 with st.sidebar:
     st.header("Election Info")
     st.write(f"**Total Votes Cast:** {len(st.session_state.v1)}")
     st.write(f"**Current Page:** {st.session_state.v4}")
     st.markdown("---")
     st.markdown("### Positions & Candidates:")
-    for _cs in _b:
-        if _cs == 'vice president':
-            st.write(f"• **{_cs.title()}:**")
-            st.write(f"  - {_bj(_cs, 'Party A')}")
-            st.write(f"  - {_bj(_cs, 'Party B')}")
-            st.write(f"  - {_bj(_cs, 'Party C')}")
+    for _bz in _b:
+        if _bz == 'vice president':
+            st.write(f"• **{_bz.title()}:**")
+            st.write(f"  - {_aq(_bz, 'Party A')}")
+            st.write(f"  - {_aq(_bz, 'Party B')}")
+            st.write(f"  - {_aq(_bz, 'Party C')}")
         else:
-            st.write(f"• **{_cs.title()}:**")
-            st.write(f"  - {_bj(_cs, 'Party A')}")
-            st.write(f"  - {_bj(_cs, 'Party B')}")
+            st.write(f"• **{_bz.title()}:**")
+            st.write(f"  - {_aq(_bz, 'Party A')}")
+            st.write(f"  - {_aq(_bz, 'Party B')}")
