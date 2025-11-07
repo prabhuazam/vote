@@ -21,13 +21,13 @@ RESULTS_FILE = "election_results.csv"
 
 # Predefined results as requested (updated for Vice President with 3 parties)
 PREDEFINED_RESULTS = {
-    'president': {'Party A': 68, 'Party B': 32, 'NOTA': 0},
-    'vice president': {'Party A': 25, 'Party B': 40, 'Party C': 35, 'NOTA': 0},
-    'secretary': {'Party A': 54, 'Party B': 46, 'NOTA': 0},
-    'joint secretary': {'Party A': 63, 'Party B': 37, 'NOTA': 0},
-    'treasurer': {'Party A': 71, 'Party B': 29, 'NOTA': 0},
-    'event organiser': {'Party A': 34, 'Party B': 66, 'NOTA': 0},
-    'sports': {'Party A': 51, 'Party B': 49, 'NOTA': 0}
+    'president': {'Party A': 68, 'Party B': 32},
+    'vice president': {'Party A': 25, 'Party B': 40, 'Party C': 35},
+    'secretary': {'Party A': 54, 'Party B': 46},
+    'joint secretary': {'Party A': 63, 'Party B': 37},
+    'treasurer': {'Party A': 71, 'Party B': 29},
+    'event organiser': {'Party A': 34, 'Party B': 66},
+    'sports': {'Party A': 51, 'Party B': 49}
 }
 
 # Initialize session state with proper checks
@@ -59,9 +59,8 @@ def save_results_to_csv(total_votes):
                 party_a_percent = PREDEFINED_RESULTS[pos]['Party A']
                 party_b_percent = PREDEFINED_RESULTS[pos]['Party B']
                 party_c_percent = PREDEFINED_RESULTS[pos]['Party C']
-                nota_percent = PREDEFINED_RESULTS[pos]['NOTA']
                 
-                # Determine winner (excluding NOTA)
+                # Determine winner
                 party_votes = {
                     'Party A': party_a_percent,
                     'Party B': party_b_percent,
@@ -73,13 +72,11 @@ def save_results_to_csv(total_votes):
                 if total_votes > 0:
                     party_a_votes = int(round(total_votes * party_a_percent / 100))
                     party_b_votes = int(round(total_votes * party_b_percent / 100))
-                    party_c_votes = int(round(total_votes * party_c_percent / 100))
-                    nota_votes = total_votes - party_a_votes - party_b_votes - party_c_votes
+                    party_c_votes = total_votes - party_a_votes - party_b_votes
                 else:
                     party_a_votes = 0
                     party_b_votes = 0
                     party_c_votes = 0
-                    nota_votes = 0
                 
                 results_data.append({
                     'timestamp': timestamp,
@@ -88,25 +85,21 @@ def save_results_to_csv(total_votes):
                     'party_a_votes': party_a_votes,
                     'party_b_votes': party_b_votes,
                     'party_c_votes': party_c_votes,
-                    'nota_votes': nota_votes,
                     'winner': winner
                 })
             else:
-                # For other positions with 2 parties + NOTA
+                # For other positions with 2 parties
                 party_a_percent = PREDEFINED_RESULTS[pos]['Party A']
                 party_b_percent = PREDEFINED_RESULTS[pos]['Party B']
-                nota_percent = PREDEFINED_RESULTS[pos]['NOTA']
                 winner = 'Party A' if party_a_percent > party_b_percent else 'Party B'
                 
                 # Calculate theoretical vote counts based on total votes
                 if total_votes > 0:
                     party_a_votes = int(round(total_votes * party_a_percent / 100))
-                    party_b_votes = int(round(total_votes * party_b_percent / 100))
-                    nota_votes = total_votes - party_a_votes - party_b_votes
+                    party_b_votes = total_votes - party_a_votes
                 else:
                     party_a_votes = 0
                     party_b_votes = 0
-                    nota_votes = 0
                 
                 results_data.append({
                     'timestamp': timestamp,
@@ -115,7 +108,6 @@ def save_results_to_csv(total_votes):
                     'party_a_votes': party_a_votes,
                     'party_b_votes': party_b_votes,
                     'party_c_votes': 0,  # Zero for other positions
-                    'nota_votes': nota_votes,
                     'winner': winner
                 })
         
@@ -139,7 +131,7 @@ def load_results_from_csv():
             
             # Check if we have the expected columns
             expected_columns = ['timestamp', 'position', 'total_votes', 'party_a_votes', 
-                              'party_b_votes', 'party_c_votes', 'nota_votes', 'winner']
+                              'party_b_votes', 'party_c_votes', 'winner']
             
             # If columns don't match, recreate the file with current structure
             if not all(col in df.columns for col in expected_columns):
@@ -225,19 +217,23 @@ def display_voting_page():
 
     if st.session_state.vote_submitted:
         st.success("✅ Your vote has been submitted successfully!")
+        st.info("You cannot vote again with the same USN.")
         if st.button("Submit Another Vote"):
             reset_voting_form()
             st.rerun()
     else:
         if usn:
-            if not re.match(r'4JN24MC\d{3}', usn):
+            # Convert to uppercase and remove spaces for consistency
+            usn_clean = usn.strip().upper()
+            
+            if not re.match(r'4JN24MC\d{3}', usn_clean):
                 st.error("Invalid USN format. Must be 4JN24MC followed by 3 digits.")
             else:
-                num = int(usn[8:])
+                num = int(usn_clean[8:])
                 if not (1 <= num <= 120):
                     st.error("USN number must be between 001 and 120.")
-                elif usn in st.session_state.voted_usns:
-                    st.error("You have already voted.")
+                elif usn_clean in st.session_state.voted_usns:
+                    st.error("❌ This USN has already voted. You cannot vote again.")
                 else:
                     st.success("USN validated. Proceed to vote.")
 
@@ -265,7 +261,7 @@ def display_voting_page():
                             # Record vote
                             vote = {pos: selections[pos] for pos in POSITIONS}
                             st.session_state.votes.append(vote)
-                            st.session_state.voted_usns.add(usn)
+                            st.session_state.voted_usns.add(usn_clean)  # Store cleaned USN
                             st.session_state.vote_submitted = True
                             
                             # Save results to CSV after voting
@@ -281,7 +277,7 @@ def display_voting_page():
     3. **NOTA (None of the Above)** option is available for all positions
     4. **Vice President** has 3 party candidates (Party A, Party B, Party C)
     5. Click 'Submit Vote' to cast your vote
-    6. Each USN can vote only once
+    6. **Each USN can vote only once** - duplicate voting is strictly restricted
     """)
 
 def display_results_page():
@@ -323,25 +319,6 @@ def display_results_page():
                         party_a_votes = pos_results['party_a_votes'].iloc[0]
                         party_b_votes = pos_results['party_b_votes'].iloc[0]
                         party_c_votes = pos_results['party_c_votes'].iloc[0]
-                        nota_votes = pos_results['nota_votes'].iloc[0]
-                        winner = pos_results['winner'].iloc[0]
-                        
-                        # Display results in a clean format
-                        col1, col2, col3, col4 = st.columns(4)
-                        with col1:
-                            st.metric(label="Party A Votes", value=party_a_votes)
-                        with col2:
-                            st.metric(label="Party B Votes", value=party_b_votes)
-                        with col3:
-                            st.metric(label="Party C Votes", value=party_c_votes)
-                        with col4:
-                            st.metric(label="NOTA Votes", value=nota_votes)
-                        
-                    else:
-                        # Display for other positions with 2 parties
-                        party_a_votes = pos_results['party_a_votes'].iloc[0]
-                        party_b_votes = pos_results['party_b_votes'].iloc[0]
-                        nota_votes = pos_results['nota_votes'].iloc[0]
                         winner = pos_results['winner'].iloc[0]
                         
                         # Display results in a clean format
@@ -351,7 +328,20 @@ def display_results_page():
                         with col2:
                             st.metric(label="Party B Votes", value=party_b_votes)
                         with col3:
-                            st.metric(label="NOTA Votes", value=nota_votes)
+                            st.metric(label="Party C Votes", value=party_c_votes)
+                        
+                    else:
+                        # Display for other positions with 2 parties
+                        party_a_votes = pos_results['party_a_votes'].iloc[0]
+                        party_b_votes = pos_results['party_b_votes'].iloc[0]
+                        winner = pos_results['winner'].iloc[0]
+                        
+                        # Display results in a clean format
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric(label="Party A Votes", value=party_a_votes)
+                        with col2:
+                            st.metric(label="Party B Votes", value=party_b_votes)
                     
                     st.write(f"**Winner: {winner}**")
                     st.write("---")
@@ -375,18 +365,6 @@ def display_results_page():
             )
         else:
             st.write("No results data available in CSV.")
-        
-        # Manual results update button
-        st.write("### Update Results")
-        if st.button("Update Results with Current Votes"):
-            total_votes = len(st.session_state.votes)
-            if total_votes > 0:
-                results_df = save_results_to_csv(total_votes)
-                if results_df is not None:
-                    st.success(f"Results updated and saved to {RESULTS_FILE}")
-                    st.rerun()
-            else:
-                st.warning("No votes to save. Cast some votes first.")
         
         delete_password = st.text_input("Enter password to delete all votes:", type="password", key="delete_pw")
         if delete_password == PASSWORD:
@@ -454,6 +432,7 @@ with st.sidebar:
     - Media position voting has been disabled
     - NOTA option available for all positions
     - Vice President has 3 candidates (Party A, B, C)
+    - **Strict one-vote-per-USN policy**
     """)
     
     st.markdown("---")
