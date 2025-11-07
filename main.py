@@ -110,9 +110,9 @@ def f6():
       for p in _y:
        st.write(f"**{p.capitalize()}:**")
        if p=='vice president':
-        o=["NOTA - None of the Above"]+[f"{get_candidate_name(p,q)} - {q}" for q in _z]
+        o=["NOTA - None of the Above"]+[f"{get_candidate_name(p,q)}" for q in _z]
        else:
-        o=["NOTA - None of the Above"]+[f"{get_candidate_name(p,q)} - {q}" for q in _x]
+        o=["NOTA - None of the Above"]+[f"{get_candidate_name(p,q)}" for q in _x]
        s[p]=st.radio(f"Select candidate for {p}:",o,key=f"r_{p}")
       submitted=st.form_submit_button("Submit")
       if submitted:
@@ -139,13 +139,13 @@ def f7():
       with c1:st.metric(f"{get_candidate_name(p,'Party A')}",v1)
       with c2:st.metric(f"{get_candidate_name(p,'Party B')}",v2)
       with c3:st.metric(f"{get_candidate_name(p,'Party C')}",v3)
-      st.write(f"**Winner: {get_candidate_name(p,w)} - {w}**")
+      st.write(f"**Winner: {get_candidate_name(p,w)}**")
      else:
       v1=pr['party_a_votes'].iloc[0];v2=pr['party_b_votes'].iloc[0];w=pr['winner'].iloc[0]
       c1,c2=st.columns(2)
       with c1:st.metric(f"{get_candidate_name(p,'Party A')}",v1)
       with c2:st.metric(f"{get_candidate_name(p,'Party B')}",v2)
-      st.write(f"**Winner: {get_candidate_name(p,w)} - {w}**")
+      st.write(f"**Winner: {get_candidate_name(p,w)}**")
      st.write("---")
   st.subheader("Admin Actions")
   st.write("### Results History")
@@ -183,16 +183,16 @@ with st.sidebar:
  st.header("Election Info")
  st.write(f"**Total Votes Cast:** {len(st.session_state.v1)}")
  st.write(f"**Current Page:** {st.session_state.v4}")
- st.info("Media disabled. NOTA available. VP: 3 parties. One vote per USN.")
+ st.info("Media disabled. NOTA available. VP: 3 candidates. One vote per USN.")
  st.markdown("---")
  st.markdown("### Positions & Candidates:")
  for p in _y:
   if p=='vice president':
    st.write(f"• **{p.title()}:**")
-   st.write(f"  - {get_candidate_name(p,'Party A')} (Party A)")
-   st.write(f"  - {get_candidate_name(p,'Party B')} (Party B)")
-   st.write(f"  - {get_candidate_name(p,'Party C')} (Party C)")
+   st.write(f"  - {get_candidate_name(p,'Party A')}")
+   st.write(f"  - {get_candidate_name(p,'Party B')}")
+   st.write(f"  - {get_candidate_name(p,'Party C')}")
   else:
    st.write(f"• **{p.title()}:**")
-   st.write(f"  - {get_candidate_name(p,'Party A')} (Party A)")
-   st.write(f"  - {get_candidate_name(p,'Party B')} (Party B)")
+   st.write(f"  - {get_candidate_name(p,'Party A')}")
+   st.write(f"  - {get_candidate_name(p,'Party B')}")
