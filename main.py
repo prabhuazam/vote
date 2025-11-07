@@ -122,14 +122,8 @@ def save_results_to_csv(total_votes):
         # Create DataFrame and save to CSV
         df = pd.DataFrame(results_data)
         
-        # Check if file exists to determine whether to write header
-        file_exists = os.path.isfile(RESULTS_FILE)
-        
-        # Save to CSV (append if file exists, otherwise create new)
-        if file_exists:
-            df.to_csv(RESULTS_FILE, mode='a', header=False, index=False)
-        else:
-            df.to_csv(RESULTS_FILE, mode='w', header=True, index=False)
+        # Always write with header to ensure consistent structure
+        df.to_csv(RESULTS_FILE, mode='w', header=True, index=False)
         
         return df
     except Exception as e:
@@ -137,23 +131,55 @@ def save_results_to_csv(total_votes):
         return None
 
 def load_results_from_csv():
-    """Load and display results from CSV file"""
+    """Load and display results from CSV file with error handling"""
     try:
         if os.path.isfile(RESULTS_FILE):
-            df = pd.read_csv(RESULTS_FILE)
+            # Try to read with error handling for inconsistent column numbers
+            df = pd.read_csv(RESULTS_FILE, on_bad_lines='skip')
+            
+            # Check if we have the expected columns
+            expected_columns = ['timestamp', 'position', 'total_votes', 'party_a_votes', 
+                              'party_b_votes', 'party_c_votes', 'nota_votes', 'winner']
+            
+            # If columns don't match, recreate the file with current structure
+            if not all(col in df.columns for col in expected_columns):
+                st.warning("CSV structure outdated. Recreating with current format...")
+                # Delete the old file and create new one
+                if st.session_state.votes:
+                    total_votes = len(st.session_state.votes)
+                    new_df = save_results_to_csv(total_votes)
+                    return new_df
+                else:
+                    os.remove(RESULTS_FILE)
+                    return None
+            
             return df
         else:
             return None
     except Exception as e:
         st.error(f"Error loading CSV: {e}")
+        # Try to recover by recreating the file
+        try:
+            if os.path.isfile(RESULTS_FILE):
+                os.remove(RESULTS_FILE)
+                st.info("Corrupted CSV file removed. New file will be created when results are saved.")
+        except:
+            pass
         return None
 
 def get_latest_results():
-    """Get the latest results from CSV file"""
+    """Get the latest results from CSV file with error handling"""
     try:
         if os.path.isfile(RESULTS_FILE):
-            df = pd.read_csv(RESULTS_FILE)
+            # Use error handling for reading CSV
+            df = pd.read_csv(RESULTS_FILE, on_bad_lines='skip')
+            
             if df.empty:
+                return None
+            
+            # Check if we have the expected structure
+            if 'timestamp' not in df.columns:
+                st.error("CSV file has incorrect structure. Please delete and recreate.")
                 return None
             
             # Get the latest timestamp
@@ -167,6 +193,27 @@ def get_latest_results():
             return None
     except Exception as e:
         st.error(f"Error loading latest results: {e}")
+        return None
+
+def fix_csv_file():
+    """Fix the CSV file by recreating it with current data"""
+    try:
+        if os.path.isfile(RESULTS_FILE):
+            backup_file = f"election_results_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            os.rename(RESULTS_FILE, backup_file)
+            st.success(f"Corrupted file backed up as {backup_file}")
+        
+        if st.session_state.votes:
+            total_votes = len(st.session_state.votes)
+            new_df = save_results_to_csv(total_votes)
+            if new_df is not None:
+                st.success("CSV file recreated with current data structure")
+                return new_df
+        else:
+            st.info("No votes to save. New file will be created when votes are cast.")
+            return None
+    except Exception as e:
+        st.error(f"Error fixing CSV file: {e}")
         return None
 
 def display_voting_page():
@@ -245,6 +292,12 @@ def display_results_page():
     
     if result_password == PASSWORD:
         st.success("Access granted.")
+        
+        # Add CSV repair option
+        if st.button("🛠️ Repair CSV File"):
+            fixed_df = fix_csv_file()
+            if fixed_df is not None:
+                st.rerun()
         
         # Load latest results from CSV
         latest_results = get_latest_results()
