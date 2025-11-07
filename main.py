@@ -7,19 +7,27 @@ from datetime import datetime
 # Constants
 PARTIES = ['Party A', 'Party B']
 POSITIONS = ['president', 'vice president', 'secretary', 'joint secretary', 'treasurer', 'event organiser', 'sports']
-CANDIDATES = {pos: {party: f"{party} Candidate for {pos}" for party in PARTIES} for pos in POSITIONS}
+# Special case for Vice President with 3 parties
+VICE_PRESIDENT_PARTIES = ['Party A', 'Party B', 'Party C']
+CANDIDATES = {}
+for pos in POSITIONS:
+    if pos == 'vice president':
+        CANDIDATES[pos] = {party: f"{party} Candidate for {pos}" for party in VICE_PRESIDENT_PARTIES}
+    else:
+        CANDIDATES[pos] = {party: f"{party} Candidate for {pos}" for party in PARTIES}
+
 PASSWORD = "AllInOne"
 RESULTS_FILE = "election_results.csv"
 
-# Predefined results as requested
+# Predefined results as requested (updated for Vice President with 3 parties)
 PREDEFINED_RESULTS = {
-    'president': {'Party A': 68, 'Party B': 32},
-    'vice president': {'Party A': 35, 'Party B': 65},
-    'secretary': {'Party A': 54, 'Party B': 46},
-    'joint secretary': {'Party A': 63, 'Party B': 37},
-    'treasurer': {'Party A': 71, 'Party B': 29},
-    'event organiser': {'Party A': 34, 'Party B': 66},
-    'sports': {'Party A': 51, 'Party B': 49}
+    'president': {'Party A': 68, 'Party B': 32, 'NOTA': 0},
+    'vice president': {'Party A': 25, 'Party B': 40, 'Party C': 35, 'NOTA': 0},
+    'secretary': {'Party A': 54, 'Party B': 46, 'NOTA': 0},
+    'joint secretary': {'Party A': 63, 'Party B': 37, 'NOTA': 0},
+    'treasurer': {'Party A': 71, 'Party B': 29, 'NOTA': 0},
+    'event organiser': {'Party A': 34, 'Party B': 66, 'NOTA': 0},
+    'sports': {'Party A': 51, 'Party B': 49, 'NOTA': 0}
 }
 
 # Initialize session state with proper checks
@@ -46,26 +54,70 @@ def save_results_to_csv(total_votes):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         for pos in POSITIONS:
-            party_a_percent = PREDEFINED_RESULTS[pos]['Party A']
-            party_b_percent = PREDEFINED_RESULTS[pos]['Party B']
-            winner = 'Party A' if party_a_percent > party_b_percent else 'Party B'
-            
-            # Calculate theoretical vote counts based on total votes
-            if total_votes > 0:
-                party_a_votes = int(round(total_votes * party_a_percent / 100))
-                party_b_votes = total_votes - party_a_votes
+            if pos == 'vice president':
+                # For vice president with 3 parties
+                party_a_percent = PREDEFINED_RESULTS[pos]['Party A']
+                party_b_percent = PREDEFINED_RESULTS[pos]['Party B']
+                party_c_percent = PREDEFINED_RESULTS[pos]['Party C']
+                nota_percent = PREDEFINED_RESULTS[pos]['NOTA']
+                
+                # Determine winner (excluding NOTA)
+                party_votes = {
+                    'Party A': party_a_percent,
+                    'Party B': party_b_percent,
+                    'Party C': party_c_percent
+                }
+                winner = max(party_votes, key=party_votes.get)
+                
+                # Calculate theoretical vote counts based on total votes
+                if total_votes > 0:
+                    party_a_votes = int(round(total_votes * party_a_percent / 100))
+                    party_b_votes = int(round(total_votes * party_b_percent / 100))
+                    party_c_votes = int(round(total_votes * party_c_percent / 100))
+                    nota_votes = total_votes - party_a_votes - party_b_votes - party_c_votes
+                else:
+                    party_a_votes = 0
+                    party_b_votes = 0
+                    party_c_votes = 0
+                    nota_votes = 0
+                
+                results_data.append({
+                    'timestamp': timestamp,
+                    'position': pos.capitalize(),
+                    'total_votes': total_votes,
+                    'party_a_votes': party_a_votes,
+                    'party_b_votes': party_b_votes,
+                    'party_c_votes': party_c_votes,
+                    'nota_votes': nota_votes,
+                    'winner': winner
+                })
             else:
-                party_a_votes = 0
-                party_b_votes = 0
-            
-            results_data.append({
-                'timestamp': timestamp,
-                'position': pos.capitalize(),
-                'total_votes': total_votes,
-                'party_a_votes': party_a_votes,
-                'party_b_votes': party_b_votes,
-                'winner': winner
-            })
+                # For other positions with 2 parties + NOTA
+                party_a_percent = PREDEFINED_RESULTS[pos]['Party A']
+                party_b_percent = PREDEFINED_RESULTS[pos]['Party B']
+                nota_percent = PREDEFINED_RESULTS[pos]['NOTA']
+                winner = 'Party A' if party_a_percent > party_b_percent else 'Party B'
+                
+                # Calculate theoretical vote counts based on total votes
+                if total_votes > 0:
+                    party_a_votes = int(round(total_votes * party_a_percent / 100))
+                    party_b_votes = int(round(total_votes * party_b_percent / 100))
+                    nota_votes = total_votes - party_a_votes - party_b_votes
+                else:
+                    party_a_votes = 0
+                    party_b_votes = 0
+                    nota_votes = 0
+                
+                results_data.append({
+                    'timestamp': timestamp,
+                    'position': pos.capitalize(),
+                    'total_votes': total_votes,
+                    'party_a_votes': party_a_votes,
+                    'party_b_votes': party_b_votes,
+                    'party_c_votes': 0,  # Zero for other positions
+                    'nota_votes': nota_votes,
+                    'winner': winner
+                })
         
         # Create DataFrame and save to CSV
         df = pd.DataFrame(results_data)
@@ -148,8 +200,18 @@ def display_voting_page():
                         selections = {}
                         for pos in POSITIONS:
                             st.write(f"**{pos.capitalize()}:**")
-                            options = [CANDIDATES[pos][party] for party in PARTIES]
-                            selections[pos] = st.radio(f"Select candidate for {pos}:", options, key=f"vote_{pos}")
+                            
+                            # Create options with NOTA as first option
+                            if pos == 'vice president':
+                                options = ["NOTA - None of the Above"] + [CANDIDATES[pos][party] for party in VICE_PRESIDENT_PARTIES]
+                            else:
+                                options = ["NOTA - None of the Above"] + [CANDIDATES[pos][party] for party in PARTIES]
+                            
+                            selections[pos] = st.radio(
+                                f"Select candidate for {pos}:", 
+                                options, 
+                                key=f"vote_{pos}"
+                            )
                         
                         submitted = st.form_submit_button("Submit Vote")
                         if submitted:
@@ -169,8 +231,10 @@ def display_voting_page():
     ### Voting Instructions:
     1. Enter your USN in the format: 4JN24MC001 to 4JN24MC120
     2. Select your preferred candidate for each position
-    3. Click 'Submit Vote' to cast your vote
-    4. Each USN can vote only once
+    3. **NOTA (None of the Above)** option is available for all positions
+    4. **Vice President** has 3 party candidates (Party A, Party B, Party C)
+    5. Click 'Submit Vote' to cast your vote
+    6. Each USN can vote only once
     """)
 
 def display_results_page():
@@ -201,22 +265,40 @@ def display_results_page():
                 if not pos_results.empty:
                     st.subheader(f"Results for {pos.capitalize()}:")
                     
-                    party_a_votes = pos_results['party_a_votes'].iloc[0]
-                    party_b_votes = pos_results['party_b_votes'].iloc[0]
-                    winner = pos_results['winner'].iloc[0]
-                    
-                    # Display results in a clean format
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric(
-                            label="Party A Votes",
-                            value=party_a_votes
-                        )
-                    with col2:
-                        st.metric(
-                            label="Party B Votes",
-                            value=party_b_votes
-                        )
+                    if pos == 'vice president':
+                        # Display for Vice President with 3 parties
+                        party_a_votes = pos_results['party_a_votes'].iloc[0]
+                        party_b_votes = pos_results['party_b_votes'].iloc[0]
+                        party_c_votes = pos_results['party_c_votes'].iloc[0]
+                        nota_votes = pos_results['nota_votes'].iloc[0]
+                        winner = pos_results['winner'].iloc[0]
+                        
+                        # Display results in a clean format
+                        col1, col2, col3, col4 = st.columns(4)
+                        with col1:
+                            st.metric(label="Party A Votes", value=party_a_votes)
+                        with col2:
+                            st.metric(label="Party B Votes", value=party_b_votes)
+                        with col3:
+                            st.metric(label="Party C Votes", value=party_c_votes)
+                        with col4:
+                            st.metric(label="NOTA Votes", value=nota_votes)
+                        
+                    else:
+                        # Display for other positions with 2 parties
+                        party_a_votes = pos_results['party_a_votes'].iloc[0]
+                        party_b_votes = pos_results['party_b_votes'].iloc[0]
+                        nota_votes = pos_results['nota_votes'].iloc[0]
+                        winner = pos_results['winner'].iloc[0]
+                        
+                        # Display results in a clean format
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric(label="Party A Votes", value=party_a_votes)
+                        with col2:
+                            st.metric(label="Party B Votes", value=party_b_votes)
+                        with col3:
+                            st.metric(label="NOTA Votes", value=nota_votes)
                     
                     st.write(f"**Winner: {winner}**")
                     st.write("---")
@@ -313,10 +395,18 @@ with st.sidebar:
     st.write(f"**Current Votes Cast:** {len(st.session_state.votes)}")
     st.write(f"**Current Page:** {st.session_state.current_page}")
     
-    # Display note about disabled media position
-    st.info("Note: Media position voting has been disabled for this election.")
+    # Display note about disabled media position and new features
+    st.info("""
+    **Notes:**
+    - Media position voting has been disabled
+    - NOTA option available for all positions
+    - Vice President has 3 candidates (Party A, B, C)
+    """)
     
     st.markdown("---")
     st.markdown("### Positions Available:")
     for pos in POSITIONS:
-        st.write(f"• {pos.title()}")
+        if pos == 'vice president':
+            st.write(f"• {pos.title()} (3 candidates + NOTA)")
+        else:
+            st.write(f"• {pos.title()} (2 candidates + NOTA)")
