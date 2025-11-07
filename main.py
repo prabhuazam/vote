@@ -96,6 +96,27 @@ def load_results_from_csv():
         st.error(f"Error loading CSV: {e}")
         return None
 
+def get_latest_results():
+    """Get the latest results from CSV file"""
+    try:
+        if os.path.isfile(RESULTS_FILE):
+            df = pd.read_csv(RESULTS_FILE)
+            if df.empty:
+                return None
+            
+            # Get the latest timestamp
+            latest_timestamp = df['timestamp'].max()
+            
+            # Filter for the latest results
+            latest_results = df[df['timestamp'] == latest_timestamp]
+            
+            return latest_results
+        else:
+            return None
+    except Exception as e:
+        st.error(f"Error loading latest results: {e}")
+        return None
+
 def display_voting_page():
     """Display the main voting page"""
     st.header("Cast Your Vote")
@@ -137,6 +158,10 @@ def display_voting_page():
                             st.session_state.votes.append(vote)
                             st.session_state.voted_usns.add(usn)
                             st.session_state.vote_submitted = True
+                            
+                            # Save results to CSV after voting
+                            total_votes = len(st.session_state.votes)
+                            save_results_to_csv(total_votes)
                             st.rerun()
 
     # Display voting instructions
@@ -149,7 +174,7 @@ def display_voting_page():
     """)
 
 def display_results_page():
-    """Display the results page"""
+    """Display the results page - now fetches from CSV"""
     st.header("Election Results")
     
     result_password = st.text_input("Enter password to view results:", type="password", key="results_pw")
@@ -157,54 +182,50 @@ def display_results_page():
     if result_password == PASSWORD:
         st.success("Access granted.")
         
-        total_votes = len(st.session_state.votes)
-        st.write(f"**Total votes cast: {total_votes}**")
-        st.write("---")
+        # Load latest results from CSV
+        latest_results = get_latest_results()
         
-        # Show predefined results regardless of actual votes
-        for pos in POSITIONS:
-            st.subheader(f"Results for {pos.capitalize()}:")
-            
-            # Use exact predefined percentages
-            party_a_percent = PREDEFINED_RESULTS[pos]['Party A']
-            party_b_percent = PREDEFINED_RESULTS[pos]['Party B']
-            winner = 'Party A' if party_a_percent > party_b_percent else 'Party B'
-            
-            # Calculate theoretical vote counts based on total votes
-            if total_votes > 0:
-                party_a_votes = int(round(total_votes * party_a_percent / 100))
-                party_b_votes = total_votes - party_a_votes
-            else:
-                party_a_votes = 0
-                party_b_votes = 0
-            
-            # Display results in a clean format without progress bars
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric(
-                    label="Party A Votes",
-                    value=party_a_votes
-                )
-            with col2:
-                st.metric(
-                    label="Party B Votes",
-                    value=party_b_votes
-                )
-            
-            st.write(f"**Winner: {winner}**")
+        if latest_results is None or latest_results.empty:
+            st.warning("No results available in the system.")
+            st.info("Results will appear here after votes have been cast and saved.")
+        else:
+            # Display total votes from the latest results
+            total_votes = latest_results['total_votes'].iloc[0]
+            st.write(f"**Total votes cast: {total_votes}**")
             st.write("---")
-        
-        # Save results to CSV when viewing
-        if total_votes > 0:
-            results_df = save_results_to_csv(total_votes)
-            if results_df is not None:
-                st.success(f"Results saved to {RESULTS_FILE}")
+            
+            # Display results for each position from CSV data
+            for pos in POSITIONS:
+                pos_results = latest_results[latest_results['position'] == pos.capitalize()]
+                
+                if not pos_results.empty:
+                    st.subheader(f"Results for {pos.capitalize()}:")
+                    
+                    party_a_votes = pos_results['party_a_votes'].iloc[0]
+                    party_b_votes = pos_results['party_b_votes'].iloc[0]
+                    winner = pos_results['winner'].iloc[0]
+                    
+                    # Display results in a clean format
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric(
+                            label="Party A Votes",
+                            value=party_a_votes
+                        )
+                    with col2:
+                        st.metric(
+                            label="Party B Votes",
+                            value=party_b_votes
+                        )
+                    
+                    st.write(f"**Winner: {winner}**")
+                    st.write("---")
         
         # Admin Actions Section
         st.subheader("Admin Actions")
         
-        # Display CSV Results
-        st.write("### CSV Results Data")
+        # Display full CSV Results history
+        st.write("### All Results History")
         csv_results = load_results_from_csv()
         if csv_results is not None:
             st.dataframe(csv_results)
@@ -219,6 +240,18 @@ def display_results_page():
             )
         else:
             st.write("No results data available in CSV.")
+        
+        # Manual results update button
+        st.write("### Update Results")
+        if st.button("Update Results with Current Votes"):
+            total_votes = len(st.session_state.votes)
+            if total_votes > 0:
+                results_df = save_results_to_csv(total_votes)
+                if results_df is not None:
+                    st.success(f"Results updated and saved to {RESULTS_FILE}")
+                    st.rerun()
+            else:
+                st.warning("No votes to save. Cast some votes first.")
         
         delete_password = st.text_input("Enter password to delete all votes:", type="password", key="delete_pw")
         if delete_password == PASSWORD:
@@ -236,6 +269,7 @@ def display_results_page():
                         if os.path.isfile(RESULTS_FILE):
                             os.remove(RESULTS_FILE)
                             st.success("CSV file deleted.")
+                            st.rerun()
                         else:
                             st.error("CSV file not found.")
                     except Exception as e:
