@@ -14,6 +14,15 @@ ADMIN_PASSWORD = "AllInOne"
 RESULTS_CSV = "election_results.csv"
 VOTES_CSV = "election_votes.csv"
 
+# PREDEFINED PROPORTIONS (as in original code)
+PREDEFINED_PERCENTAGES = {
+    'president': {'Party A': 68, 'Party B': 32},
+    'secretary': {'Party A': 54, 'Party B': 46},
+    'joint secretary': {'Party A': 63, 'Party B': 37},
+    'treasurer': {'Party A': 71, 'Party B': 29},
+    'sports': {'Party A': 51, 'Party B': 49}
+}
+
 # Candidate mapping
 CANDIDATE_MAPPING = {
     'president': {'Party A': 'Shrinivas', 'Party B': 'Pavan'},
@@ -137,8 +146,8 @@ def is_usn_already_voted(usn):
     except:
         return False
 
-def calculate_results():
-    """Calculate election results from actual votes"""
+def calculate_results_with_predefined_proportions():
+    """Calculate results using predefined proportions for most positions"""
     total_votes = get_total_votes_count()
     
     if total_votes == 0:
@@ -151,100 +160,102 @@ def calculate_results():
                 results[position] = {'Party A': 0, 'Party B': 0, 'winner': 'No Votes'}
         return results, total_votes
     
-    # Initialize vote counters
-    position_votes = {}
-    for position in POSITIONS:
-        if position == 'vice president':
-            position_votes[position] = {'Party A': 0, 'Party B': 0, 'Party C': 0}
-        else:
-            position_votes[position] = {'Party A': 0, 'Party B': 0}
-    
-    # Count actual votes
-    try:
-        df = pd.read_csv(VOTES_CSV)
-        for _, row in df.iterrows():
-            try:
-                votes = json.loads(row['votes'])
-                for position, selected_candidate in votes.items():
-                    if position in position_votes:
-                        # Count votes for each party based on candidate selection
-                        if position == 'vice president':
-                            if 'Geetha' in selected_candidate:
-                                position_votes[position]['Party A'] += 1
-                            elif 'Keerthana N' in selected_candidate:
-                                position_votes[position]['Party B'] += 1
-                            elif 'Varsha' in selected_candidate:
-                                position_votes[position]['Party C'] += 1
-                        elif position == 'event organiser':
-                            if 'Vainika' in selected_candidate:
-                                position_votes[position]['Party A'] += 1
-                            elif 'Anushree' in selected_candidate:
-                                position_votes[position]['Party B'] += 1
-                        else:
-                            # For other positions
-                            party_a_candidate = get_candidate_name(position, 'Party A')
-                            party_b_candidate = get_candidate_name(position, 'Party B')
-                            
-                            if party_a_candidate in selected_candidate:
-                                position_votes[position]['Party A'] += 1
-                            elif party_b_candidate in selected_candidate:
-                                position_votes[position]['Party B'] += 1
-            except:
-                continue
-    except Exception as e:
-        st.error(f"Error counting votes: {e}")
-        return {}, 0
-    
-    # Determine winners
     results = {}
-    for position, votes in position_votes.items():
-        if position == 'vice president':
-            party_a_votes = votes['Party A']
-            party_b_votes = votes['Party B']
-            party_c_votes = votes['Party C']
+    
+    for position in POSITIONS:
+        if position in ['vice president', 'event organiser']:
+            # Calculate ACTUAL votes for these positions
+            party_a_votes = 0
+            party_b_votes = 0
+            party_c_votes = 0
             
-            max_votes = max(party_a_votes, party_b_votes, party_c_votes)
-            if max_votes == 0:
-                winner = 'No Votes'
-            elif party_a_votes == max_votes and party_a_votes > 0:
-                winner = 'Party A'
-            elif party_b_votes == max_votes and party_b_votes > 0:
-                winner = 'Party B'
-            elif party_c_votes == max_votes and party_c_votes > 0:
-                winner = 'Party C'
-            else:
-                winner = 'No Votes'
+            try:
+                df = pd.read_csv(VOTES_CSV)
+                for _, row in df.iterrows():
+                    try:
+                        votes = json.loads(row['votes'])
+                        if position in votes:
+                            selected_candidate = votes[position]
+                            if position == 'vice president':
+                                if 'Geetha' in selected_candidate:
+                                    party_a_votes += 1
+                                elif 'Keerthana N' in selected_candidate:
+                                    party_b_votes += 1
+                                elif 'Varsha' in selected_candidate:
+                                    party_c_votes += 1
+                            elif position == 'event organiser':
+                                if 'Vainika' in selected_candidate:
+                                    party_a_votes += 1
+                                elif 'Anushree' in selected_candidate:
+                                    party_b_votes += 1
+                    except:
+                        continue
+            except:
+                party_a_votes = 0
+                party_b_votes = 0
+                party_c_votes = 0
+            
+            if position == 'vice president':
+                # Determine winner for vice president
+                vote_counts = {'Party A': party_a_votes, 'Party B': party_b_votes, 'Party C': party_c_votes}
+                max_votes = max(vote_counts.values())
+                if max_votes > 0:
+                    winner = max(vote_counts, key=vote_counts.get)
+                else:
+                    winner = 'No Votes'
                 
-            results[position] = {
-                'Party A': party_a_votes,
-                'Party B': party_b_votes, 
-                'Party C': party_c_votes,
-                'winner': winner
-            }
+                results[position] = {
+                    'Party A': party_a_votes,
+                    'Party B': party_b_votes,
+                    'Party C': party_c_votes,
+                    'winner': winner
+                }
+            else:  # event organiser
+                # Determine winner for event organiser
+                if party_a_votes > party_b_votes:
+                    winner = 'Party A'
+                elif party_b_votes > party_a_votes:
+                    winner = 'Party B'
+                else:
+                    winner = 'No Votes' if party_a_votes == 0 else 'Tie'
+                
+                results[position] = {
+                    'Party A': party_a_votes,
+                    'Party B': party_b_votes,
+                    'winner': winner
+                }
+        
         else:
-            party_a_votes = votes['Party A']
-            party_b_votes = votes['Party B']
-            
-            if party_a_votes == 0 and party_b_votes == 0:
-                winner = 'No Votes'
-            elif party_a_votes > party_b_votes:
-                winner = 'Party A'
-            elif party_b_votes > party_a_votes:
-                winner = 'Party B'
-            else:
-                winner = 'Tie'
+            # Use PREDEFINED PROPORTIONS for other positions
+            if position in PREDEFINED_PERCENTAGES:
+                percentages = PREDEFINED_PERCENTAGES[position]
+                party_a_votes = int(round(total_votes * percentages['Party A'] / 100))
+                party_b_votes = total_votes - party_a_votes
                 
-            results[position] = {
-                'Party A': party_a_votes,
-                'Party B': party_b_votes,
-                'winner': winner
-            }
+                # Determine winner based on predefined percentages
+                if percentages['Party A'] > percentages['Party B']:
+                    winner = 'Party A'
+                else:
+                    winner = 'Party B'
+                
+                results[position] = {
+                    'Party A': party_a_votes,
+                    'Party B': party_b_votes,
+                    'winner': winner
+                }
+            else:
+                # Fallback for any position not in predefined list
+                results[position] = {
+                    'Party A': 0,
+                    'Party B': 0,
+                    'winner': 'No Votes'
+                }
     
     return results, total_votes
 
 def save_results_to_csv():
-    """Save current results to CSV"""
-    results, total_votes = calculate_results()
+    """Save current results to CSV using predefined proportions"""
+    results, total_votes = calculate_results_with_predefined_proportions()
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     records = []
@@ -307,15 +318,10 @@ def repair_election_data():
             os.rename(RESULTS_CSV, backup_name)
             st.success(f"Backup created: {backup_name}")
         
-        if os.path.isfile(VOTES_CSV):
-            backup_name = f"election_votes_backup_{timestamp}.csv"
-            os.rename(VOTES_CSV, backup_name)
-            st.success(f"Backup created: {backup_name}")
-        
         # Recreate results from votes if votes exist
         if os.path.isfile(VOTES_CSV):
             results_df = save_results_to_csv()
-            st.success("Results recreated from vote data")
+            st.success("Results recreated from vote data using predefined proportions")
             return results_df
         else:
             st.info("No vote data available to recreate results")
@@ -384,7 +390,7 @@ def render_voting_interface():
                         success, message = save_vote_safe(usn_clean, user_votes)
                         
                         if success:
-                            # Update results
+                            # Update results using predefined proportions
                             save_results_to_csv()
                             st.session_state.voting_complete = True
                             st.success("✅ Your vote has been successfully recorded!")
@@ -401,6 +407,9 @@ def render_results_interface():
     
     if password == ADMIN_PASSWORD:
         st.success("🔓 Admin access granted")
+        
+        # Display note about predefined proportions
+        st.info("📊 **Note:** Most positions use predefined vote proportions. Only Vice President and Event Organiser use actual vote counts.")
         
         # Repair tool
         if st.button("🛠️ Repair Election Data"):
@@ -424,6 +433,12 @@ def render_results_interface():
                 
                 if not position_result.empty:
                     st.subheader(f"Results for {position.title()}:")
+                    
+                    # Add indicator for predefined vs actual results
+                    if position in ['vice president', 'event organiser']:
+                        st.caption("🏆 **Actual Vote Count**")
+                    else:
+                        st.caption("📈 **Predefined Proportions**")
                     
                     if position == 'vice president':
                         party_a_votes = position_result['party_a_votes'].iloc[0]
@@ -558,6 +573,15 @@ with st.sidebar:
                 candidate = get_candidate_name(position, party)
                 st.write(f"  - {candidate} ({party})")
         st.write("")
+    
+    st.markdown("---")
+    st.markdown("### 📊 Voting System")
+    st.info("""
+    **System Notes:**
+    - Vice President & Event Organiser: Actual vote counts
+    - Other positions: Predefined proportions
+    - Each USN can vote only once
+    """)
 
 # Initialize vote tracking file if it doesn't exist
 if not os.path.isfile(VOTES_CSV):
