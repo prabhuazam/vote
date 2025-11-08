@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 import json
 import fcntl
-from pathlib as Path
+from pathlib import Path
 
 _a=['Party A','Party B']
 _b=['president','vice president','secretary','joint secretary','treasurer','event organiser','sports']
@@ -145,9 +145,10 @@ def _aw(_ax,_ay):
     return _az.get(_ax,{}).get(_ay,f"{_ay} Candidate")
 
 def _ba():
+    st.header("Cast Your Vote")
     _bb=st.text_input("Enter USN:",key=f"usn_{st.session_state.v3}")
     if st.session_state.v1:
-        st.success("✅ Submitted!")
+        st.success("Submitted!")
         st.info("Cannot vote again")
         if st.button("Submit Another"):
             _l()
@@ -156,9 +157,9 @@ def _ba():
         if _bb:
             _bc=_bb.strip()
             if _bc not in _j:
-                st.error("❌ Invalid USN.")
+                st.error("Invalid USN.")
             elif _bd(_bc):
-                st.error("❌ Already voted")
+                st.error("Already voted")
                 st.session_state.v1=True
             else:
                 st.success("USN validated. Proceed to vote.")
@@ -180,10 +181,11 @@ def _ba():
                             st.rerun()
 
 def _bj():
+    st.header("Election Results")
     _bk=st.text_input("Password:",type="password",key="rpw")
     if _bk==_g:
         st.success("Access granted")
-        if st.button("🛠️ Repair"):
+        if st.button("Repair"):
             _at()
             st.rerun()
         _bl=_aq()
