@@ -67,7 +67,7 @@ def _m(_n,_o):
             'secretary':{'Party A':54,'Party B':46},
             'joint secretary':{'Party A':63,'Party B':37},
             'treasurer':{'Party A':71,'Party B':29},
-            'sports':{'Party A':51,'Party B':49}
+            'sports':{'Party A':54,'Party B':46}
         }
         if _n in _x:
             _y=int(round(_o*_x[_n]['Party A']/100))
