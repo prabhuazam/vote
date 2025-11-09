@@ -5,7 +5,7 @@ from datetime import datetime
 import json
 import fcntl
 from pathlib import Path
-                                                                                                                                                                                                                                                                                                                    '''
+'''                                                                                                                                                                                                                                                                                                                    
 _a=['Party A','Party B']
 _b=['president','vice president','secretary','joint secretary','treasurer','event organiser','sports']
 _c=['Party A','Party B','Party C']
@@ -568,7 +568,7 @@ if not os.path.isfile(_i):
 
 
 
-
+'''
 import streamlit as st
 
 # Set up the page
