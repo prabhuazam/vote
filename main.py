@@ -5,7 +5,7 @@ from datetime import datetime
 import json
 import fcntl
 from pathlib import Path
-'''                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                    
 _a=['Party A','Party B']
 _b=['president','vice president','secretary','joint secretary','treasurer','event organiser','sports']
 _c=['Party A','Party B','Party C']
@@ -567,26 +567,3 @@ if not os.path.isfile(_i):
 
 
 
-
-'''
-import streamlit as st
-
-# Set up the page
-st.set_page_config(page_title="ABB Shutdown Notice", page_icon="🚨", layout="centered")
-
-# Display the shutdown notice
-st.title("🚨 ABB Has Been Shut Down 🚨")
-st.subheader("This ABB has been shut down due to gambling or unethical practices.")
-st.write(
-    "We take ethical practices seriously and have taken action to ensure a safe environment."
-)
-
-# Provide a link to learn more about Streamlit's rules and guidelines
-st.markdown(
-    '[Learn more about Streamlit rules and guidelines](https://streamlit.io/rules-and-guidelines)'
-)
-
-# Optionally, display a footer message for further contact or feedback
-st.markdown(
-    "If you have any questions, please contact support at [support@example.com](mailto:support@example.com)"
-)
