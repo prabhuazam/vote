@@ -5,7 +5,30 @@ from datetime import datetime
 import json
 import fcntl
 from pathlib import Path
-                                                                                                                                                                                                                                                                                                                    
+
+# --- MODIFICATION START ---
+# The entire application logic is bypassed to display the shutdown message immediately.
+
+st.set_page_config(layout="centered")
+st.title("🚨 Application Shutdown 🚨")
+
+# Display the requested message with appropriate formatting
+st.error(
+    "**This app has been shut down due to gambling/unethical practices**", 
+    icon="⚠️"
+)
+st.markdown("---")
+st.warning("The application's core functionality is disabled.")
+st.info("Please contact the system administrator for more information.")
+
+# The rest of the original code's functions and variables (e.g., _a, _b, _c, _d, _j, _l, _m, etc.) 
+# are now irrelevant and will not be executed because the application flow is halted 
+# immediately after the imports. They are included below for completeness of the original file, 
+# but they have no effect on the output.
+
+# --- MODIFICATION END ---
+
+
 _a=['Party A','Party B']
 _b=['president','vice president','secretary','joint secretary','treasurer','event organiser','sports']
 _c=['Party A','Party B','Party C']
@@ -314,256 +337,3 @@ def _bi(_ck,_cl):
         if _cm.exists():
             try:_cm.unlink()
             except:pass
-
-st.title("MCA FORUM COLLEGE VOTING SYSTEM")
-_ct=st.radio("Go to:",["Voting","Results"],index=0 if st.session_state.v2=="Voting"else 1,horizontal=True)
-if _ct=="Voting"and st.session_state.v2!="Voting":
-    st.session_state.v2="Voting"
-    st.rerun()
-elif _ct=="Results"and st.session_state.v2!="Results":
-    st.session_state.v2="Results"
-    st.rerun()
-st.markdown("---")
-if st.session_state.v2=="Voting":
-    _ba()
-else:
-    _bj()
-with st.sidebar:
-    st.header("Election Info")
-    st.write(f"**Total Votes Cast:** {_ad()}")
-    st.write(f"**Current Page:** {st.session_state.v2}")
-    st.markdown("---")
-    st.markdown("### Positions & Candidates:")
-    for _cu in _b:
-        if _cu=='vice president':
-            st.write(f"• **{_cu.title()}:**")
-            st.write(f"  - {_aw(_cu,'Party A')}")
-            st.write(f"  - {_aw(_cu,'Party B')}")
-            st.write(f"  - {_aw(_cu,'Party C')}")
-        else:
-            st.write(f"• **{_cu.title()}:**")
-            st.write(f"  - {_aw(_cu,'Party A')}")
-            st.write(f"  - {_aw(_cu,'Party B')}")
-
-if not os.path.isfile(_i):
-    try:
-        pd.DataFrame(columns=['usn','votes','timestamp']).to_csv(_i,index=False)
-    except:
-        pass
-                                                                                                                                                                                                                                                                                                                           
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
