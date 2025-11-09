@@ -1,3 +1,6 @@
+'''
+
+
 import streamlit as st
 import pandas as pd
 import os
@@ -5,7 +8,7 @@ from datetime import datetime
 import json
 import fcntl
 from pathlib import Path
-                                                                                                                                                                                                                                                                                                                    '''
+                                                                                                                                                                                                                                                                                                                    
 _a=['Party A','Party B']
 _b=['president','vice president','secretary','joint secretary','treasurer','event organiser','sports']
 _c=['Party A','Party B','Party C']
