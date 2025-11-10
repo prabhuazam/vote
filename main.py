@@ -29,13 +29,45 @@ PASSWORD = "AllInOne"
 RESULTS_FILE = "election_results.csv"
 VOTES_FILE = "election_votes.csv"
 
+# Initialize session state
+def init_session_state():
+    if 'has_voted' not in st.session_state:
+        st.session_state.has_voted = False
+    if 'page_title' not in st.session_state:
+        st.session_state.page_title = "Voting"
+    if 'form_counter' not in st.session_state:
+        st.session_state.form_counter = 0
+    if 'otp_verified' not in st.session_state:
+        st.session_state.otp_verified = False
+    if 'otp_sent' not in st.session_state:
+        st.session_state.otp_sent = False
+    if 'current_usn' not in st.session_state:
+        st.session_state.current_usn = None
+    if 'user_email' not in st.session_state:
+        st.session_state.user_email = None
+    if 'otp_attempts' not in st.session_state:
+        st.session_state.otp_attempts = 0
+    if 'otp_expiry' not in st.session_state:
+        st.session_state.otp_expiry = None
+    if 'email_configured' not in st.session_state:
+        st.session_state.email_configured = False
+    if 'generated_otp' not in st.session_state:
+        st.session_state.generated_otp = None
+    if 'email_config' not in st.session_state:
+        st.session_state.email_config = {
+            'smtp_server': 'smtp.gmail.com',
+            'smtp_port': 587,
+            'sender_email': '',
+            'sender_password': ''
+        }
+
 # Gmail Configuration Section
 st.sidebar.header("📧 Gmail Configuration")
 
 # Instructions in sidebar
 st.sidebar.markdown("""
 **Gmail Setup Instructions:**
-1. Use your Gmail account (sagarsinghd12@gmail.com)
+1. Use your Gmail account
 2. **Enable 2-Factor Authentication** in Google Account
 3. **Generate App Password**:
    - Go to Google Account → Security → 2-Step Verification
@@ -48,31 +80,20 @@ st.sidebar.markdown("""
 # Email configuration with user input
 sender_email = st.sidebar.text_input(
     "Gmail Address:", 
-    value="sagarsinghd12@gmail.com",  # Fixed: removed "mailto:"
+    value="",
     help="Enter your Gmail address for sending OTPs"
 )
 
 sender_password = st.sidebar.text_input(
-    "Gmail App Password:",  # Fixed: proper label
+    "Gmail App Password:",
     type="password",
     help="16-character app password from Google Account settings",
     placeholder="Enter your 16-character app password"
 )
 
-# Store email config in session state to persist across reruns
-if 'email_config' not in st.session_state:
-    st.session_state.email_config = {
-        'smtp_server': 'smtp.gmail.com',
-        'smtp_port': 587,
-        'sender_email': sender_email,
-        'sender_password': sender_password
-    }
-else:
-    # Update with current values
-    st.session_state.email_config.update({
-        'sender_email': sender_email,
-        'sender_password': sender_password
-    })
+# Update email config in session state
+st.session_state.email_config['sender_email'] = sender_email
+st.session_state.email_config['sender_password'] = sender_password
 
 EMAIL_CONFIG = st.session_state.email_config
 
@@ -101,21 +122,21 @@ if st.sidebar.button("Test Email Configuration"):
     else:
         st.sidebar.warning("Please enter both email and app password")
 
-# Valid USNs with associated emails - UPDATED WITH REAL TESTING EMAILS
+# Valid USNs with associated emails
 VALID_USNS_WITH_EMAILS = {
-    '4JN24MC001': 'sagarsinghd12@gmail.com',  # Using your email for testing
-    '4JN24MC002': 'sagarsinghd12@gmail.com',  # Using your email for testing
-    '250801': 'sagarsinghd12@gmail.com',
-    '251361': 'sagarsinghd12@gmail.com',
+    '4JN24MC001': 'test1@example.com',
+    '4JN24MC002': 'test2@example.com',
+    '250801': 'test3@example.com',
+    '251361': 'test4@example.com',
 }
 
-# Generate emails for remaining USNs - ALL POINTING TO YOUR TEST EMAIL
+# Generate emails for remaining USNs
 for i in range(1, 121):
     usn = f"4JN24MC{i:03d}"
     if usn not in VALID_USNS_WITH_EMAILS:
-        VALID_USNS_WITH_EMAILS[usn] = 'sagarsinghd12@gmail.com'  # Your email for testing
+        VALID_USNS_WITH_EMAILS[usn] = f'student{i}@example.com'
 
-# Add the specific USNs from your list - ALL POINTING TO YOUR TEST EMAIL
+# Add the specific USNs from your list
 additional_usns = {
     '250801', '251361', '251183', '251348', '251240', '251270', '251281', '251250',
     '251353', '251233', '251301', '251292', '250940', '251277', '251298', '251226',
@@ -135,33 +156,9 @@ additional_usns = {
 
 for usn in additional_usns:
     if usn not in VALID_USNS_WITH_EMAILS:
-        VALID_USNS_WITH_EMAILS[usn] = 'sagarsinghd12@gmail.com'  # Your email for testing
+        VALID_USNS_WITH_EMAILS[usn] = f'student_{usn}@example.com'
 
 VALID_USNS = set(VALID_USNS_WITH_EMAILS.keys())
-
-# Session state initialization
-if 'has_voted' not in st.session_state:
-    st.session_state.has_voted = False
-if 'page_title' not in st.session_state:
-    st.session_state.page_title = "Voting"
-if 'form_counter' not in st.session_state:
-    st.session_state.form_counter = 0
-if 'otp_verified' not in st.session_state:
-    st.session_state.otp_verified = False
-if 'otp_sent' not in st.session_state:
-    st.session_state.otp_sent = False
-if 'current_usn' not in st.session_state:
-    st.session_state.current_usn = None
-if 'user_email' not in st.session_state:
-    st.session_state.user_email = None
-if 'otp_attempts' not in st.session_state:
-    st.session_state.otp_attempts = 0
-if 'otp_expiry' not in st.session_state:
-    st.session_state.otp_expiry = None
-if 'email_configured' not in st.session_state:
-    st.session_state.email_configured = False
-if 'generated_otp' not in st.session_state:
-    st.session_state.generated_otp = None
 
 def reset_voting_form():
     """Reset the voting form state"""
@@ -282,7 +279,126 @@ def verify_otp(user_otp, stored_otp, expiry_time):
     else:
         return False, "Invalid OTP. Please try again."
 
-# ... (rest of your existing functions remain the same - calculate_results, generate_results_csv, etc.)
+def get_candidate_name(position, party):
+    """Get candidate name for a position and party"""
+    return CANDIDATE_CONFIG.get(position, {}).get(party, f"{party} Candidate")
+
+def has_user_voted(usn):
+    """Check if user has already voted"""
+    try:
+        if os.path.exists(VOTES_FILE):
+            df = pd.read_csv(VOTES_FILE)
+            return usn in df['usn'].values
+        return False
+    except Exception:
+        return False
+
+def save_vote(usn, votes):
+    """Save vote to CSV file"""
+    try:
+        vote_data = {
+            'usn': usn,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        # Add each position vote
+        for position, candidate in votes.items():
+            vote_data[position] = candidate
+        
+        # Create DataFrame and save
+        if os.path.exists(VOTES_FILE):
+            df = pd.read_csv(VOTES_FILE)
+            new_df = pd.DataFrame([vote_data])
+            df = pd.concat([df, new_df], ignore_index=True)
+        else:
+            df = pd.DataFrame([vote_data])
+        
+        df.to_csv(VOTES_FILE, index=False)
+        return True
+    except Exception as e:
+        st.error(f"Error saving vote: {str(e)}")
+        return False
+
+def calculate_results():
+    """Calculate election results"""
+    try:
+        if not os.path.exists(VOTES_FILE):
+            return {}
+        
+        df = pd.read_csv(VOTES_FILE)
+        results = {}
+        
+        for position in POSITIONS:
+            if position in df.columns:
+                position_results = df[position].value_counts().to_dict()
+                results[position] = position_results
+        
+        return results
+    except Exception as e:
+        st.error(f"Error calculating results: {str(e)}")
+        return {}
+
+def generate_results_csv():
+    """Generate results CSV file"""
+    try:
+        results = calculate_results()
+        results_data = []
+        
+        for position, candidates in results.items():
+            for candidate, votes in candidates.items():
+                results_data.append({
+                    'position': position,
+                    'candidate': candidate,
+                    'votes': votes
+                })
+        
+        if results_data:
+            results_df = pd.DataFrame(results_data)
+            results_df.to_csv(RESULTS_FILE, index=False)
+        
+        return results
+    except Exception as e:
+        st.error(f"Error generating results CSV: {str(e)}")
+        return {}
+
+def results_page():
+    """Display election results"""
+    st.header("Election Results")
+    
+    if st.button("Refresh Results"):
+        st.rerun()
+    
+    results = calculate_results()
+    
+    if not results:
+        st.info("No votes have been cast yet.")
+        return
+    
+    total_votes = 0
+    if os.path.exists(VOTES_FILE):
+        df = pd.read_csv(VOTES_FILE)
+        total_votes = len(df)
+    
+    st.metric("Total Votes Cast", total_votes)
+    
+    for position, candidates in results.items():
+        st.subheader(f"{position.title()} Results")
+        
+        # Create results DataFrame
+        results_df = pd.DataFrame({
+            'Candidate': list(candidates.keys()),
+            'Votes': list(candidates.values())
+        }).sort_values('Votes', ascending=False)
+        
+        # Display results
+        st.dataframe(results_df, use_container_width=True)
+        
+        # Show winner
+        if not results_df.empty:
+            winner = results_df.iloc[0]
+            st.success(f"🏆 Leading: {winner['Candidate']} with {winner['Votes']} votes")
+        
+        st.markdown("---")
 
 def voting_page():
     """Display the voting page with email OTP verification"""
@@ -293,7 +409,7 @@ def voting_page():
         st.warning("⚠️ **Email Not Configured**")
         st.info("Please configure Gmail settings in the sidebar to enable OTP verification.")
         st.markdown("""
-        **Quick Setup for sagarsinghd12@gmail.com:**
+        **Quick Setup:**
         1. Go to Google Account → Security → 2-Step Verification
         2. Enable 2-Factor Authentication
         3. Generate App Password for "Mail"
@@ -427,11 +543,12 @@ def voting_page():
                     st.success("🎉 Your vote has been recorded successfully!")
                     st.rerun()
 
-# ... (rest of your existing functions remain exactly the same)
-
 # Main app
 def main():
     st.title("🎓 College Election System")
+    
+    # Initialize session state
+    init_session_state()
     
     # Navigation
     page = st.sidebar.selectbox("Navigate to:", ["Voting", "Results"])
