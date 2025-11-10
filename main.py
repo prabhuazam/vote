@@ -6,28 +6,6 @@ import json
 import fcntl
 from pathlib import Path
 
-# --- MODIFICATION START ---
-# The entire application logic is bypassed to display the shutdown message immediately.
-
-st.set_page_config(layout="centered")
-st.title("🚨 Application Shutdown 🚨")
-
-# Display the requested message with appropriate formatting
-st.error(
-    "**This app has been shut down due to gambling/unethical practices**", 
-    icon="⚠️"
-)
-st.markdown("---")
-st.warning("The application's core functionality is disabled.")
-st.info("Please contact the system administrator for more information.")
-
-# The rest of the original code's functions and variables (e.g., _a, _b, _c, _d, _j, _l, _m, etc.) 
-# are now irrelevant and will not be executed because the application flow is halted 
-# immediately after the imports. They are included below for completeness of the original file, 
-# but they have no effect on the output.
-
-# --- MODIFICATION END ---
-
 
 _a=['Party A','Party B']
 _b=['president','vice president','secretary','joint secretary','treasurer','event organiser','sports']
