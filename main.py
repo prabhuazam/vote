@@ -33,7 +33,6 @@ _j = {f"4JN24MC{k:03d}" for k in range(1, 121)} | {
     '251230','251357','251355','251385','251371','250751','251366','251300',
     '251296','250716','251035','251229'
 }
-
 if 'v1' not in st.session_state:st.session_state.v1=False
 if 'v2' not in st.session_state:st.session_state.v2="Voting"
 if 'v3' not in st.session_state:st.session_state.v3=0
