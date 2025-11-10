@@ -1,18 +1,2 @@
 streamlit==1.28.0
 pandas==2.0.3
-python-dateutil==2.8.2
-pytz==2023.3
-# Core dependencies
-streamlit==1.28.0
-pandas==2.0.3
-
-# Date/time handling (usually comes with pandas)
-python-dateutil==2.8.2
-pytz==2023.3
-
-# Email functionality (included in Python standard library)
-# No need to include: smtplib, email, random, string, json, os, datetime, fcntl, pathlib
-
-# Optional: For better data validation (if you want to add later)
-# numpy==1.24.3
-# openpyxl==3.1.2  # For Excel file support
